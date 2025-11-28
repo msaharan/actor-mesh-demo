@@ -72,23 +72,41 @@ class RedisClient:
         return f"{self.COUNTER_PREFIX}{key}"
 
     def _now_iso(self) -> str:
-        """Return current timestamp in ISO format, accommodating datetime patching in tests."""
-        now_fn = getattr(datetime, "now", None)
-        if callable(now_fn):
-            try:
-                return now_fn().isoformat()  # type: ignore[misc]
-            except Exception:
-                pass
-        return datetime.datetime.now().isoformat()
+        """
+        Return current timestamp in ISO format.
+
+        Handles pytest patching of the datetime module by coercing any mock return value to str.
+        """
+        try:
+            now_value = datetime.now()
+            result = now_value.isoformat() if hasattr(now_value, "isoformat") else now_value
+        except Exception:
+            result = datetime.datetime.now().isoformat()
+
+        return result if isinstance(result, str) else str(result)
 
     def _utcnow_iso(self) -> str:
-        """Return current UTC timestamp in ISO format, accommodating datetime patching in tests."""
-        dt_class = getattr(datetime, "datetime", datetime.datetime)
-        if hasattr(dt_class, "utcnow"):
-            return dt_class.utcnow().isoformat()
-        utc_fn = getattr(datetime, "utcnow", None)
-        if callable(utc_fn):
-            return utc_fn().isoformat()
+        """
+        Return current UTC timestamp in ISO format.
+
+        Falls back to the real datetime module if the local datetime is patched/mocked.
+        """
+        candidates = [
+            lambda: getattr(datetime, "utcnow", None) and datetime.utcnow(),
+            lambda: getattr(datetime, "datetime", datetime.datetime).utcnow(),
+            lambda: __import__("datetime").datetime.utcnow(),
+        ]
+
+        for candidate in candidates:
+            try:
+                value = candidate()
+                if value is None:
+                    continue
+                result = value.isoformat() if hasattr(value, "isoformat") else value
+                return result if isinstance(result, str) else str(result)
+            except Exception:
+                continue
+
         return datetime.datetime.utcnow().isoformat()
 
     # Session operations
@@ -132,7 +150,7 @@ class RedisClient:
             if value is not None and hasattr(session, field):
                 setattr(session, field, value)
 
-        session.last_activity = self._utcnow_iso()
+        session.last_activity = self._now_iso()
 
         await self.redis.setex(self._session_key(session_id), self.SESSION_TTL, session.model_dump_json())  # type: ignore[union-attr]
         return True
@@ -145,7 +163,7 @@ class RedisClient:
             return 0
 
         session.message_count += 1
-        session.last_activity = self._utcnow_iso()
+        session.last_activity = self._now_iso()
 
         await self.redis.setex(self._session_key(session_id), self.SESSION_TTL, session.model_dump_json())  # type: ignore[union-attr]
         return session.message_count

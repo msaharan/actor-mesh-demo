@@ -28,7 +28,6 @@ class SimplifiedRedisClient:
         """Close connection."""
         if self.redis:
             await self.redis.aclose()
-            self.redis = None
 
     async def _ensure_connected(self) -> None:
         """Connect if not already connected."""
@@ -117,4 +116,3 @@ async def init_simplified_redis(redis_url: str = "redis://localhost:6379") -> Si
     simplified_redis_client = SimplifiedRedisClient(redis_url)
     await simplified_redis_client.connect()
     return simplified_redis_client
-
