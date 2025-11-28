@@ -86,7 +86,7 @@ ecommerce-support = "api.gateway:main"
 actor-demo = "demo:main"
 
 [tool.setuptools.packages.find]
-include = ["actors*", "api*", "models*", "mock_services*"]
+include = ["actors*", "api*", "models*", "mock_services*", "storage*"]
 
 [tool.setuptools.package-data]
 "*" = ["*.html", "*.css", "*.js", "*.json", "*.yaml", "*.yml"]
