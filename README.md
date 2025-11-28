@@ -1,5 +1,7 @@
 # Actor Mesh Demo - E-commerce Support AI Agent
 
+![User Interface](docs/UI_screenshot.png)
+
 A comprehensive implementation of Actor Mesh Architecture principles through a enterprise-ready E-commerce Support AI Agent. This system demonstrates intelligent customer support automation using choreography-based message routing, smart decision making, real-time web interfaces, and seamless API integration.
 
 ## 🎯 Core Features
